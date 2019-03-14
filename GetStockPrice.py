@@ -69,6 +69,7 @@ def ScheduledJob():
 	
 	# 株価取得 (コンソール出力 + CSVファイル出力)
 	dataList = GetCurrentPrice("楽天")
+	dataList = GetCurrentPrice("伊藤園")
 
 
 #---------------------------------------------------------------------
