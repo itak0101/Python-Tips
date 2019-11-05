@@ -15,7 +15,7 @@ xmlFolderPath = topFolderPath + '/Annotations'
 imgFolderPath = topFolderPath + '/JPEGImages'
 
 # フォルダパス (ローカルPC内で処理結果を出力するフォルダ)
-imgOutputPath = topFolderPath + '/AnnotatedImage'
+imgOutputPath = topFolderPath + '/AnnotatedImages'
 
 # ファイルパス (エラーログを出力するパス)
 logFilePath = topFolderPath + '/ErrorLog.txt'
