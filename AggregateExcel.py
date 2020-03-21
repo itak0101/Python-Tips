@@ -23,6 +23,7 @@ import os
 import glob
 import xlrd  # ExcelRead (xls,xlsx)
 import shutil
+import sys
 
 
 #---------------------------------------------------------------------
@@ -32,13 +33,13 @@ import shutil
 # フォルダの存在確認 (トップフォルダ)
 topFolderPath = os.path.abspath(topFolderPath)
 if(os.path.exists(topFolderPath) == False):
-    ErrorEnd ('Error | 指定されたフォルダ(トップフォルダ)が存在しません: ' + topFolderPath)
+    print ('Error | 指定されたフォルダ(トップフォルダ)が存在しません: ' + topFolderPath)
     sys.exit()
 
 # フォルダの存在確認 (入力ファイル格納フォルダ)
 inputFolderPath = os.path.abspath(inputFolderPath)
 if(os.path.exists(inputFolderPath) == False):
-    ErrorEnd ('Error | 指定されたフォルダ(入力データ格納フォルダ)が存在しません: ' + inputFolderPath)
+    print ('Error | 指定されたフォルダ(入力データ格納フォルダ)が存在しません: ' + inputFolderPath)
     sys.exit()
 
 # フォルダの存在確認 (出力ファイル格納フォルダが存在していたら削除してから新規作成、存在していなければ新規作成)
@@ -50,7 +51,7 @@ os.mkdir(outputFolderPath)
 # 入力ファイル格納フォルダ内のXLSファイルのパス一覧を取得する
 xlsFilePaths = glob.glob(inputFolderPath + '/*.xls')
 if(len(xlsFilePaths) == 0):
-    ErrorEnd ('Error | 入力ファイル格納フォルダにXLSファイルが格納されていません: ' + inputFolderPath)
+    print ('Error | 入力ファイル格納フォルダにXLSファイルが格納されていません: ' + inputFolderPath)
     sys.exit()
 
 # パス一覧をもとに、1つずつXLSファイルを当たってゆく
