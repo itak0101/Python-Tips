@@ -171,12 +171,12 @@ for i, anoFilePath in enumerate(anoFilePaths):
         G = 0
         B = 0
 
-        if className == 'Face':
+        if className == 'Dog':
             R = 255
-        elif className == 'Plate':
+        elif className == 'Cat':
             B = 255
         else:
-            outputLines.append(imgFilePath + ' , Face,Plate以外のクラス名が見つかりました , ' + className)
+            outputLines.append(imgFilePath + ' , Dog,Cat以外のクラス名が見つかりました , ' + className)
 
         # BoudingBoxの描画
         draw.rectangle((int(float(Xmin)), int(float(Ymin)), int(float(Xmax)), int(float(Ymax))), outline=(R, G, B))
