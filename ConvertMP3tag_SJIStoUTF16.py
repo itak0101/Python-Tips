@@ -11,8 +11,7 @@
 #---------------------------------------------------------------------
 
 # mp3格納フォルダ (最上位パスを指定)
-#targetFolderPath = './豊嶋真千子/'
-targetFolderPath = '/Volumes/BACKUPS/Music'
+targetFolderPath = './'
 
 # 出力ファイル(タグ情報)
 tagInfoFilePath = './ConvertMP3tag_SJIStoUTF16.txt'
