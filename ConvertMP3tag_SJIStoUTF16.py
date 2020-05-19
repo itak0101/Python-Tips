@@ -10,8 +10,7 @@
 #---------------------------------------------------------------------
 
 # mp3格納フォルダ (最上位パスを指定)
-targetFolderPath = './豊嶋真千子/'
-#targetFolderPath = '/Volumes/BACKUPS/Music'
+targetFolderPath = './'
 
 # 出力ファイル (タグ情報一覧)
 alignInfoFilePath = './ConvertMP3tag_Align.txt'        # フォルダ内でアルバム名等統一機能
