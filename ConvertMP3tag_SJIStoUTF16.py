@@ -4,23 +4,22 @@
 # ・現在はMP3ファイルのタグ情報は UTF-16 で書き込むルールになっている。
 # ・よって最近の音楽プレーヤー等で古いMP3ファイルを読み込んだ際に SJIS の日本語が文字化けする。
 # ・SJISで書き込まれたタグ情報をUTF-16に変換するのが本プログラムである。
+# ・更新対象の MP3タグ要素は Artist, Album, AlbumArtist, OriginalArtist, disc_num, track_num, title
 
 #---------------------------------------------------------------------
 # ユーザー設定値
 #---------------------------------------------------------------------
 
 # mp3格納フォルダ (最上位パスを指定)
-targetFolderPath = './'
+targetFolderPath = './Convert/'
 
 # 出力ファイル (タグ情報一覧)
-alignInfoFilePath = './ConvertMP3tag_Align.txt'        # フォルダ内でアルバム名等統一機能
-encodeInfoFilePath = './ConvertMP3tag_SJIStoUTF16.txt' # 文字コード変換機能
+logFilePath = './ConvertMP3tag_SJIStoUTF16.txt'
 
 # タグ更新フラグ
 # True:  タグ情報一覧ファイルを出力後、MP3ファイルのタグ更新する
 # False: タグ情報一覧ファイルを出力後、MP3ファイルのタグ更新しない
-updateAlign = False   # フォルダ内でアルバム名等統一機能
-updateEncode = False  # 文字コード変換機能
+convertMP3tag = False
 
 
 #---------------------------------------------------------------------
@@ -31,7 +30,6 @@ import glob
 import sys
 import os
 from tkinter import Tk, messagebox
-import collections
 
 
 #---------------------------------------------------------------------
@@ -102,154 +100,9 @@ def ChangePermission_RtoW():
 
 
 #---------------------------------------------------------------------
-# ファイル名を変更
-#---------------------------------------------------------------------
-def ChangeFileName():
-
-    # ターゲットフォルダ以下にあるファイルを再起的に探索
-    searchText = targetFolderPath + '/**/*.mp3'
-    targetFiles = sorted(glob.glob(searchText, recursive=True))
-
-    # ターゲットファイルが読み取り専用の場合は、書き込み可能に変更
-    for i, file in enumerate(targetFiles):
-
-        # 変更前ファイル名を取得
-        target = os.path.abspath(file)
-
-        # 変更後ファイル名を設定
-        target_2 = os.path.basename(target)    # ファイル名部分のみ取得
-        target_2 = target_2.replace('　', ' ') # 全角スペースを半角スペースに変更
-        if(target_2[:2]=='- '):                # 先頭2文字が '- ' の場合は削除
-            target_2 = target_2[2:]
-        target_2 = os.path.dirname(target) + '/' + target_2
-
-        # リネーム実行
-        if(target != target_2):
-            print(str(i+1) + '/' + str(len(targetFiles)) + ' Rename: from' + target + ' to ' + target_2)
-            os.rename(target, target_2)
-
-
-#---------------------------------------------------------------------
-# 同一フォルダ内に格納されているMP3のタグ情報を一致させる (Artist, Album, AlbumArtist, OriginalArtist)
-# #同一フォルダ内で最も出現回数が多い名称に統一する
-#---------------------------------------------------------------------
-def UpdateTagInfo_Align(alignInfoFilePath, updateAlign):
-
-    # ターゲットフォルダ以下にあるファイルを再起的に探索
-    searchText = targetFolderPath + '/**/*.mp3'
-    targetFiles = sorted(glob.glob(searchText, recursive=True))
-
-    # ループカウンタ
-    skipCount = 0
-
-    # ターゲットファイルを一つずつ処理してゆく
-    for i in range(len(targetFiles)-1):
-
-        # ターゲットファイルのフルパス・格納ディレクトリを取得
-        targetFile = os.path.abspath(targetFiles[i])
-        targetDir = os.path.dirname(targetFile)
-
-        # 処理済みフォルダ内のファイルはスキップする
-        print (str(i+1) + '/' + str(len(targetFiles)) + ' ' + targetFile)
-
-        # 処理済みフォルダ内のファイルはスキップする
-        if (skipCount > 0):
-            skipCount = skipCount - 1
-            continue
-
-        # ターゲットファイルと同一フォルダに格納されているファイルを探索する
-        for j in range(i, len(targetFiles)):
-            targetFile_2 = os.path.abspath(targetFiles[j])
-            targetDir_2 = os.path.dirname(targetFile_2)
-            # 格納フォルダが異なる場合はループ脱出
-            if(targetDir_2 != targetDir):
-                break
-            #print(i,j,targetFile,targetFile_2)
-
-        # フォルダ内の最後のファイルのインデックスを設定
-        lastFileIdx = j
-        if(j == len(targetFiles) - 1):
-            lastFileIdx = len(targetFiles)
-
-        # フォルダ内に格納されているMP3のタグ情報を取得する(配列に格納)
-        artists, albums, album_artists, original_artists = [],[],[],[]
-        for k in range(i, lastFileIdx):
-            targetFile_2 = os.path.abspath(targetFiles[k])
-            audioInfo_2 = eyed3.load(targetFile_2)
-            tag = audioInfo_2.tag
-            if not tag:
-                print('Info | NoTag')
-                continue
-            artists.append(tag.artist)
-            albums.append(tag.album)
-            album_artists.append(tag.album_artist)
-            original_artists.append(tag.original_artist)
-
-        # フォルダ内で最も利用されている名称を取得
-        c1 = collections.Counter(artists)
-        c2 = collections.Counter(albums)
-        c3 = collections.Counter(album_artists)
-        c4 = collections.Counter(original_artists)
-        artist = c1.most_common()[0][0]
-        album = c2.most_common()[0][0]
-        album_artist = c3.most_common()[0][0]
-        original_artist = c4.most_common()[0][0]
-
-        # フォルダ内に格納されているMP3のタグ情報を更新する(最も利用されている値に更新)
-        with open(alignInfoFilePath, mode='w', encoding='UTF-16') as f:
-
-            # 出力ファイルのヘッダ行を出力
-            f.write(',,Before,,,,After,,,' + '\r\n')
-            f.write('FilePath,Diff,Artist,Album_Artist,Original_Artist,Album,Artist,Album_Artist,Original_Artist,Album' + '\r\n')
-
-            for k in range(i, lastFileIdx):
-                targetFile_2 = os.path.abspath(targetFiles[k])
-                audioInfo_2 = eyed3.load(targetFile_2)
-                tag = audioInfo_2.tag
-                if not tag:
-                    print('Info | NoTag')
-                    continue
-
-                # 文字コードの変更・ディスク番号・トラック番号の打ち直しによって、文字列に変化があったら Diff フラグを True にする
-                diff = True
-                if((tag.artist == artist) and (tag.album_artist == album_artist) and (tag.original_artist == original_artist) and (tag.album == album)):
-                    diff = False
-
-                # 出力ファイル(タグ情報)の出力
-                f.write('"' + str(targetFile_2) + '"')
-                f.write(',"' + str(diff) + '"')
-                f.write(',"' + str(tag.artist) + '"')
-                f.write(',"' + str(tag.album_artist) + '"')
-                f.write(',"' + str(tag.original_artist) + '"')
-                f.write(',"' + str(tag.album) + '"')
-                f.write(',"' + str(artist) + '"')
-                f.write(',"' + str(album_artist) + '"')
-                f.write(',"' + str(original_artist) + '"')
-                f.write(',"' + str(album) + '"')
-                f.write('\r\n')
-
-                # タグ情報の更新フラグがOFFの時は以降をスキップ
-                if(updateAlign == False):
-                    continue
-
-                # タグ情報の更新
-                tag.artist = artist
-                tag.album_artist = album_artist
-                tag.original_artist = original_artist
-                tag.album = album
-                try:
-                    audioInfo_2.tag.save(encoding = 'utf-16', version = tag.version, backup = False)
-                except:
-                    print('Exception from audioInfo.tag.save()')
-
-        # フォルダ内のMP3は更新済のため、スキップされる様にする
-        skipCount = j - i - 1
-
-
-#---------------------------------------------------------------------
 # タグ情報を一覧出力する + タグ情報を更新する
 #---------------------------------------------------------------------
-def UpdateTagInfo_SJIStoUTF16(encodeInfoFilePath, updateEncode):
+def ConvertTagInfo_SJIStoUTF16(encodeInfoFilePath, updateTag):
 
     # ターゲットフォルダ以下にあるファイルを再起的に探索
     searchText = targetFolderPath + '/**/*.mp3'
@@ -308,7 +161,6 @@ def UpdateTagInfo_SJIStoUTF16(encodeInfoFilePath, updateEncode):
             track_num_2 = (trackNo, None)
             preArtist = artist
             preAlbum = album
-            #print(disc_num,disc_num_2,track_num,track_num_2)
 
             # タグ情報の文字コード変換
             enc1, enc2 = '', ''
@@ -385,7 +237,7 @@ def UpdateTagInfo_SJIStoUTF16(encodeInfoFilePath, updateEncode):
             f.write('\r\n')
 
             # タグ情報の更新 (ユーザーが入力したタグ更新フラグが True の場合)
-            if (updateEncode == True):
+            if (updateTag == True):
                 #audioInfo.tag.clear()
                 # 文字を入力する領域に、文字コード変換前後で1つでも差異があった場合
                 if (diffWord == True):
@@ -416,27 +268,14 @@ CheckParams()
 # ファイルのパーミション変更 (読み取り専用だった場合は書き込み可能に変更)
 ChangePermission_RtoW()
 
-# ファイル名を変更
-ChangeFileName()
-
-#同一フォルダ内に格納されているMP3のタグ情報を一致させる (Artist, Album, AlbumArtist, OriginalArtist)
-#同一フォルダ内で最も出現回数が多い名称に統一する
-UpdateTagInfo_Align(alignInfoFilePath, updateAlign)
-
 # タグ情報の読み取りと更新
 # updateTag=True:  タグ情報一覧ファイルを出力後、MP3ファイルのタグ更新する
 # updateTag=False: タグ情報一覧ファイルを出力後、MP3ファイルのタグ更新しない
-UpdateTagInfo_SJIStoUTF16(encodeInfoFilePath, updateEncode)
+ConvertTagInfo_SJIStoUTF16(logFilePath, convertMP3tag)
 
 print('■ Process Finished')
 
 
-#---------------------------------------------------------------------
-# ToDo
-#---------------------------------------------------------------------
-# [A] 指定したファイルに対してタグ情報を更新する機能
-#
-#
 #---------------------------------------------------------------------
 # 参考資料
 #---------------------------------------------------------------------
@@ -454,7 +293,6 @@ print('■ Process Finished')
 #
 # [5] Pythonのchardetで文字コード判定
 # https://blog.imind.jp/entry/2019/08/24/143939
-#
 #
 #---------------------------------------------------------------------
 # End
